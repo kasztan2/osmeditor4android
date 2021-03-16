@@ -1299,6 +1299,7 @@ public class StorageDelegator implements Serializable, Exportable, DataStorage {
             for (Relation r : relations) {
                 Log.d(DEBUG_TAG, "addSplitWayToRelations processing relation (#" + r.getOsmId() + "/" + relations.size() + ")");
                 List<RelationMember> members = r.getAllMembers(way);
+                int memberCount = members.size();
                 if (members.isEmpty()) {
                     Log.d(DEBUG_TAG, "Unconsistent state detected way " + way.getOsmId() + " should be relation member");
                     ACRAHelper.nocrashReport(null, "Unconsistent state detected way " + way.getOsmId() + " should be relation member");
@@ -1351,8 +1352,8 @@ public class StorageDelegator implements Serializable, Exportable, DataStorage {
                         }
                     } else { // default handling of relations membership
                         RelationMember newMember = new RelationMember(rm.getRole(), newWay); // use the same role
-                        RelationMember prevMember = r.getMemberAt(memberPos - 1);
-                        RelationMember nextMember = r.getMemberAt(memberPos + 1);
+                        RelationMember prevMember = r.getMemberAt(memberPos == 0 ? memberCount - 1 : memberPos - 1);
+                        RelationMember nextMember = r.getMemberAt((memberPos + 1) % (memberCount - 1));
                         /*
                          * We need to determine if to insert the new way before or after the existing member If the new
                          * way has a common node with the previous member or if the existing way has a common node with
@@ -1447,6 +1448,43 @@ public class StorageDelegator implements Serializable, Exportable, DataStorage {
         r.replaceMember(rm, newMember);
         way.removeParentRelation(r); // way is dirty and will be changed anyway
         newWay.addParentRelation(r);
+    }
+
+    /**
+     * Find any relation members that are before or after the way and are not downloaded
+     * 
+     * @param way the Way we are interested in
+     * @return a Set containing the ids of any missing neighbour ways
+     */
+    @NonNull
+    public synchronized Set<Long> missingRelationNeighbourIds(@NonNull Way way) {
+        Set<Long> result = new HashSet<>();
+        if (way.hasParentRelations()) {
+            for (Relation r : way.getParentRelations()) {
+                List<RelationMember> members = r.getAllMembers(way);
+                int memberCount = members.size();
+                for (RelationMember rm : members) {
+                    int memberPos = r.getPosition(rm);
+                    addWayIdToResult(r, memberPos == 0 ? memberCount - 1 : memberPos - 1, result);
+                    addWayIdToResult(r, (memberPos + 1) % (memberCount - 1), result);
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Add the Way id of the member to result if it isn't downloaded
+     * 
+     * @param r the Relation holding the members
+     * @param memberPos position of the member
+     * @param result a Set holding the result
+     */
+    private void addWayIdToResult(Relation r, int memberPos, Set<Long> result) {
+        RelationMember member = r.getMemberAt(memberPos);
+        if (!member.downloaded() && Way.NAME.equals(member.getType())) {
+            result.add(member.getRef());
+        }
     }
 
     /**
