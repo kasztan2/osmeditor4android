@@ -1359,8 +1359,8 @@ public class StorageDelegator implements Serializable, Exportable, DataStorage {
                          * way has a common node with the previous member or if the existing way has a common node with
                          * the following member we insert before, otherwise we insert after the existing member.
                          * 
-                         * FIXME To do this really properly we would have to download the previous and next elements for
-                         * routes
+                         * To do this really properly we would have to download the previous and next elements for
+                         * routes, the caller of the splitting method needs to do this if necessary
                          */
                         if (hasCommonNode(prevMember, newWay)) {
                             r.addMemberBefore(rm, newMember);
@@ -1448,43 +1448,6 @@ public class StorageDelegator implements Serializable, Exportable, DataStorage {
         r.replaceMember(rm, newMember);
         way.removeParentRelation(r); // way is dirty and will be changed anyway
         newWay.addParentRelation(r);
-    }
-
-    /**
-     * Find any relation members that are before or after the way and are not downloaded
-     * 
-     * @param way the Way we are interested in
-     * @return a Set containing the ids of any missing neighbour ways
-     */
-    @NonNull
-    public synchronized Set<Long> missingRelationNeighbourIds(@NonNull Way way) {
-        Set<Long> result = new HashSet<>();
-        if (way.hasParentRelations()) {
-            for (Relation r : way.getParentRelations()) {
-                List<RelationMember> members = r.getAllMembers(way);
-                int memberCount = members.size();
-                for (RelationMember rm : members) {
-                    int memberPos = r.getPosition(rm);
-                    addWayIdToResult(r, memberPos == 0 ? memberCount - 1 : memberPos - 1, result);
-                    addWayIdToResult(r, (memberPos + 1) % (memberCount - 1), result);
-                }
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Add the Way id of the member to result if it isn't downloaded
-     * 
-     * @param r the Relation holding the members
-     * @param memberPos position of the member
-     * @param result a Set holding the result
-     */
-    private void addWayIdToResult(Relation r, int memberPos, Set<Long> result) {
-        RelationMember member = r.getMemberAt(memberPos);
-        if (!member.downloaded() && Way.NAME.equals(member.getType())) {
-            result.add(member.getRef());
-        }
     }
 
     /**
