@@ -24,6 +24,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewGroup.LayoutParams;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -57,9 +58,11 @@ import de.blau.android.presets.PresetCheckField;
 import de.blau.android.presets.PresetCheckGroupField;
 import de.blau.android.presets.PresetComboField;
 import de.blau.android.presets.PresetField;
+import de.blau.android.presets.PresetTagField;
 import de.blau.android.presets.PresetFixedField;
 import de.blau.android.presets.PresetItem;
 import de.blau.android.presets.PresetKeyType;
+import de.blau.android.presets.PresetLabelField;
 import de.blau.android.presets.PresetTextField;
 import de.blau.android.presets.ValueType;
 import de.blau.android.propertyeditor.EditorUpdate;
@@ -239,8 +242,8 @@ public class TagFormFragment extends BaseFragment implements FormUpdate {
      * @return an ArrayAdapter for key, or null if something went wrong
      */
     @Nullable
-    ArrayAdapter<?> getValueAutocompleteAdapter(@Nullable String key, @Nullable List<String> values, @Nullable PresetItem preset, @Nullable PresetField field,
-            @NonNull Map<String, String> allTags) {
+    ArrayAdapter<?> getValueAutocompleteAdapter(@Nullable String key, @Nullable List<String> values, @Nullable PresetItem preset,
+            @Nullable PresetTagField field, @NonNull Map<String, String> allTags) {
         return getValueAutocompleteAdapter(key, values, preset, field, allTags, false, true, maxInlineValues);
     }
 
@@ -260,8 +263,8 @@ public class TagFormFragment extends BaseFragment implements FormUpdate {
      * @return an ArrayAdapter for key, or null if something went wrong
      */
     @Nullable
-    ArrayAdapter<?> getValueAutocompleteAdapter(@Nullable String key, @Nullable List<String> values, @Nullable PresetItem preset, @Nullable PresetField field,
-            @NonNull Map<String, String> allTags, boolean addRuler, boolean dedup, int addMruSize) {
+    ArrayAdapter<?> getValueAutocompleteAdapter(@Nullable String key, @Nullable List<String> values, @Nullable PresetItem preset,
+            @Nullable PresetTagField field, @NonNull Map<String, String> allTags, boolean addRuler, boolean dedup, int addMruSize) {
         ArrayAdapter<?> adapter = null;
 
         if (key != null && key.length() > 0) {
@@ -664,34 +667,40 @@ public class TagFormFragment extends BaseFragment implements FormUpdate {
             // iterate over preset entries so that we maintain ordering
             for (Entry<String, PresetField> entry : preset.getFields().entrySet()) {
                 PresetField field = entry.getValue();
-                String key = field.getKey();
-                String value = tagList.get(key);
-                if (value != null) {
-                    if (field instanceof PresetFixedField) {
-                        if (value.equals(((PresetFixedField) field).getValue().getValue())) {
-                            tagList.remove(key);
-                            editableView.putTag(key, value);
-                        } // else leave this fixed key for further processing
-                    } else if (field.getKey().equals(key)) {
-                        editable.put(field, value);
-                        tagList.remove(key);
-                        editableView.putTag(key, value);
-                    }
-                } else if (field instanceof PresetCheckGroupField) {
-                    Map<String, String> keyValues = new HashMap<>();
-                    for (PresetCheckField check : ((PresetCheckGroupField) field).getCheckFields()) {
-                        key = check.getKey();
-                        value = tagList.get(key);
-                        if (value != null) {
-                            keyValues.put(key, value);
+                if (field instanceof PresetTagField) {
+                    PresetTagField tagField = (PresetTagField) field;
+                    String key = tagField.getKey();
+                    String value = tagList.get(key);
+                    if (value != null) {
+                        if (tagField instanceof PresetFixedField) {
+                            if (value.equals(((PresetFixedField) tagField).getValue().getValue())) {
+                                tagList.remove(key);
+                                editableView.putTag(key, value);
+                            } // else leave this fixed key for further processing
+                        } else if (tagField.getKey().equals(key)) {
+                            editable.put(tagField, value);
                             tagList.remove(key);
                             editableView.putTag(key, value);
                         }
+                    } else if (tagField instanceof PresetCheckGroupField) {
+                        Map<String, String> keyValues = new HashMap<>();
+                        for (PresetCheckField check : ((PresetCheckGroupField) tagField).getCheckFields()) {
+                            key = check.getKey();
+                            value = tagList.get(key);
+                            if (value != null) {
+                                keyValues.put(key, value);
+                                tagList.remove(key);
+                                editableView.putTag(key, value);
+                            }
+                        }
+                        if (!keyValues.isEmpty()) {
+                            editable.put(tagField, "");
+                            checkGroupKeyValues.put(tagField.getKey(), keyValues);
+                        }
                     }
-                    if (!keyValues.isEmpty()) {
-                        editable.put(field, "");
-                        checkGroupKeyValues.put(field.getKey(), keyValues);
-                    }
+                } else if (field instanceof PresetLabelField) {
+                    System.out.println("PresetLabelField " + field);
+                    editable.put(field, "");
                 }
             }
             // process any remaining tags
@@ -710,7 +719,7 @@ public class TagFormFragment extends BaseFragment implements FormUpdate {
                         if (l.getFixedTagCount() > 0) {
                             continue; // Presets with fixed tags should always get their own entry
                         }
-                        PresetField field = l.getField(key);
+                        PresetTagField field = l.getField(key);
                         if (field != null) {
                             if (field instanceof PresetCheckGroupField) {
                                 Map<String, String> keyValues = new HashMap<>();
@@ -752,33 +761,47 @@ public class TagFormFragment extends BaseFragment implements FormUpdate {
         } else {
             Log.e(DEBUG_TAG, "addTagsToViews called with null preset");
         }
-        if (groupingRequired) {
-            List<String> i18nKeys = getI18nKeys(preset);
-            preset.groupI18nKeys(i18nKeys);
-            de.blau.android.presets.Util.groupI18nKeys(i18nKeys, editable);
-            de.blau.android.presets.Util.groupI18nKeys(i18nKeys, linkedTags);
-        }
-        de.blau.android.presets.Util.groupAddrKeys(linkedTags);
+        // if (groupingRequired) {
+        // List<String> i18nKeys = getI18nKeys(preset);
+        // preset.groupI18nKeys(i18nKeys);
+        // de.blau.android.presets.Util.groupI18nKeys(i18nKeys, editable);
+        // de.blau.android.presets.Util.groupI18nKeys(i18nKeys, linkedTags);
+        // }
+        // de.blau.android.presets.Util.groupAddrKeys(linkedTags);
         for (Entry<PresetField, String> entry : editable.entrySet()) {
-            PresetField field = entry.getKey();
-            if (field instanceof PresetCheckGroupField) {
-                CheckGroupDialogRow.getRow(this, inflater, editableView, (PresetCheckGroupField) field, checkGroupKeyValues.get(field.getKey()), preset, tags);
-            } else {
-                addRow(editableView, field, entry.getValue(), preset, tags);
-            }
+            addFieldToView(editableView, preset, tags, checkGroupKeyValues, entry);
         }
         for (Entry<PresetField, String> entry : linkedTags.entrySet()) {
-            PresetItem linkedItem = keyToLinkedPreset.get(entry.getKey().getKey());
-            PresetField field = entry.getKey();
-            if (field instanceof PresetCheckGroupField) {
-                CheckGroupDialogRow.getRow(this, inflater, editableView, (PresetCheckGroupField) field, checkGroupKeyValues.get(field.getKey()), linkedItem,
-                        tags);
-            } else {
-                addRow(editableView, field, entry.getValue(), linkedItem, tags);
-            }
+            final PresetField field = entry.getKey();
+            PresetItem linkedItem = field instanceof PresetTagField ? keyToLinkedPreset.get(((PresetTagField) field).getKey()) : null;
+            addFieldToView(editableView, linkedItem, tags, checkGroupKeyValues, entry);
         }
 
         return tagList;
+    }
+
+    /**
+     * @param editableView
+     * @param preset
+     * @param tags
+     * @param checkGroupKeyValues
+     * @param entry
+     */
+    private void addFieldToView(EditableLayout editableView, PresetItem preset, Map<String, String> tags, Map<String, Map<String, String>> checkGroupKeyValues,
+            Entry<PresetField, String> entry) {
+        PresetField field = entry.getKey();
+        if (field instanceof PresetCheckGroupField) {
+            CheckGroupDialogRow.getRow(this, inflater, editableView, (PresetCheckGroupField) field,
+                    checkGroupKeyValues.get(((PresetCheckGroupField) field).getKey()), preset, tags);
+        } else if (field instanceof PresetTagField) {
+            addRow(editableView, (PresetTagField) field, entry.getValue(), preset, tags);
+        } else if (field instanceof PresetLabelField) {
+            TextView tv = new TextView(getContext());
+            tv.setText(((PresetLabelField) field).getLabel());
+            tv.setHeight(64);
+            tv.setWidth(LayoutParams.MATCH_PARENT);
+            editableView.addView(tv);
+        }
     }
 
     /**
@@ -839,7 +862,7 @@ public class TagFormFragment extends BaseFragment implements FormUpdate {
      * @param preset the Preset we believe the key belongs to
      * @param allTags the other tags for this object
      */
-    void addRow(@Nullable final LinearLayout rowLayout, @NonNull final PresetField field, final String value, @Nullable PresetItem preset,
+    void addRow(@Nullable final LinearLayout rowLayout, @NonNull final PresetTagField field, final String value, @Nullable PresetItem preset,
             Map<String, String> allTags) {
         final String key = field.getKey();
         if (rowLayout != null) {

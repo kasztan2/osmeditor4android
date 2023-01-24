@@ -19,7 +19,7 @@ import de.blau.android.nsi.Names;
 import de.blau.android.nsi.Names.NameAndTags;
 import de.blau.android.osm.Tags;
 import de.blau.android.presets.PresetComboField;
-import de.blau.android.presets.PresetField;
+import de.blau.android.presets.PresetTagField;
 import de.blau.android.presets.PresetItem;
 import de.blau.android.presets.PresetTextField;
 import de.blau.android.presets.ValueType;
@@ -159,7 +159,7 @@ public class TextRow extends LinearLayout implements KeyValueRow {
      * @return a TagTextRow instance
      */
     static TextRow getRow(@NonNull final TagFormFragment caller, @NonNull final LayoutInflater inflater, @NonNull final LinearLayout rowLayout,
-            @Nullable final PresetItem preset, @NonNull final PresetField field, @Nullable final String value, @Nullable final List<String> values,
+            @Nullable final PresetItem preset, @NonNull final PresetTagField field, @Nullable final String value, @Nullable final List<String> values,
             final Map<String, String> allTags) {
         final TextRow row = (TextRow) inflater.inflate(R.layout.tag_form_text_row, rowLayout, false);
         final String key = field.getKey();
@@ -258,7 +258,7 @@ public class TextRow extends LinearLayout implements KeyValueRow {
      * @param field the PresetField for the tag
      * @param valueView the View for the value
      */
-    protected static void setHint(@Nullable final PresetField field, @NonNull final CustomAutoCompleteTextView valueView) {
+    protected static void setHint(@Nullable final PresetTagField field, @NonNull final CustomAutoCompleteTextView valueView) {
         if (field instanceof PresetTextField) {
             valueView.setHint(R.string.tag_value_hint);
         } else {

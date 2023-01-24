@@ -560,7 +560,7 @@ public class Preset {
                     }
                     addToAutosuggest(currentItem, checkKey, dummy);
                 }
-            } else {
+            } else if (field instanceof PresetTagField){
                 addToTagItems(key, currentItem);
                 if (field instanceof PresetFixedField) {
                     addToTagItems(key, ((PresetFixedField) field).getValue(), currentItem);
@@ -1267,7 +1267,7 @@ public class Preset {
      * @param value the value
      * @return true if the tag matches
      */
-    public static boolean hasKeyValue(@Nullable PresetField field, @Nullable String value) {
+    public static boolean hasKeyValue(@Nullable PresetTagField field, @Nullable String value) {
         if (field == null) {
             return false;
         }

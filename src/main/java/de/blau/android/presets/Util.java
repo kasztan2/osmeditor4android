@@ -104,18 +104,18 @@ public final class Util {
      * @param i18nKeys List of keys that potentially have i18n variants
      * @param map a Map containing PresetFields and their current values
      */
-    public static <V> void groupI18nKeys(List<String> i18nKeys, Map<PresetField, V> map) {
-        Map<PresetField, V> temp = new LinkedHashMap<>();
-        List<PresetField> keys = new ArrayList<>(map.keySet());
+    public static <V> void groupI18nKeys(List<String> i18nKeys, Map<PresetTagField, V> map) {
+        Map<PresetTagField, V> temp = new LinkedHashMap<>();
+        List<PresetTagField> keys = new ArrayList<>(map.keySet());
         while (!keys.isEmpty()) {
-            PresetField field = keys.get(0);
+            PresetTagField field = keys.get(0);
             String key = field.getKey();
             keys.remove(0);
             if (i18nKeys.contains(key)) {
                 temp.put(field, map.get(field));
                 int i = 0;
                 while (!keys.isEmpty() && i < keys.size()) {
-                    PresetField i18nKeyField = keys.get(i);
+                    PresetTagField i18nKeyField = keys.get(i);
                     String i18nKey = i18nKeyField.getKey();
                     if (i18nKey.startsWith(key + ":")) {
                         temp.put(keys.get(i), map.get(i18nKeyField));
@@ -140,10 +140,10 @@ public final class Util {
      * @param <V> object containing the tag value(s)
      * @param map map that preserves insert order
      */
-    public static <V> void groupAddrKeys(Map<PresetField, V> map) {
-        List<Entry<PresetField, V>> temp = new ArrayList<>();
-        for (Entry<PresetField, V> entry : new HashSet<>(map.entrySet())) { // needs a copy since we are modifying map
-            PresetField field = entry.getKey();
+    public static <V> void groupAddrKeys(Map<PresetTagField, V> map) {
+        List<Entry<PresetTagField, V>> temp = new ArrayList<>();
+        for (Entry<PresetTagField, V> entry : new HashSet<>(map.entrySet())) { // needs a copy since we are modifying map
+            PresetTagField field = entry.getKey();
             String key = field.getKey();
             if (key.startsWith(Tags.KEY_ADDR_BASE) && Tags.KEY_ADDR_HOUSENUMBER.equals(key)) {
                 temp.add(entry);
@@ -151,7 +151,7 @@ public final class Util {
             }
         }
         Collections.sort(temp, (e0, e1) -> Tags.ADDRESS_SORT_ORDER.get(e0.getValue()).compareTo(Tags.ADDRESS_SORT_ORDER.get(e1.getValue())));
-        for (Entry<PresetField, V> entry : temp) {
+        for (Entry<PresetTagField, V> entry : temp) {
             map.put(entry.getKey(), entry.getValue());
         }
     }

@@ -25,6 +25,7 @@ import de.blau.android.R;
 import de.blau.android.presets.Preset;
 import de.blau.android.presets.PresetComboField;
 import de.blau.android.presets.PresetField;
+import de.blau.android.presets.PresetTagField;
 import de.blau.android.presets.PresetItem;
 import de.blau.android.presets.ValueType;
 import de.blau.android.presets.ValueWithCount;
