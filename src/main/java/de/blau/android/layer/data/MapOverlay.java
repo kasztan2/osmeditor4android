@@ -1196,11 +1196,28 @@ public class MapOverlay<O extends OsmElement> extends MapViewLayer
         if (iconPath != null && !usePresetIcon) {
             iconDrawable = customIconCache.get(iconPath);
             if (iconDrawable == null && !customIconCache.containsKey(iconPath)) {
-                try (FileInputStream stream = new FileInputStream(iconPath)) {
-                    iconDrawable = PresetIconManager.bitmapDrawableFromStream(context, ICON_SIZE_DP, stream, PresetIconManager.isSvg(iconPath));
-                    customIconCache.put(iconPath, iconDrawable);
-                } catch (IOException e) {
-                    Log.e(DEBUG_TAG, "Icon " + iconPath + " not found");
+                String iconDirPath = DataStyle.getCurrent().getIconDirPath();
+                if (iconDirPath != null) {
+                    try (FileInputStream stream = new FileInputStream(iconPath)) {
+                        iconDrawable = PresetIconManager.bitmapDrawableFromStream(context, ICON_SIZE_DP, stream, PresetIconManager.isSvg(iconPath));
+                        customIconCache.put(iconPath, iconDrawable);
+                    } catch (IOException e) {
+                        Log.e(DEBUG_TAG, "Icon " + iconPath + " not found");
+                    }
+                } else { // search in presets
+                    for (Preset preset:App.getCurrentPresets(context)) {
+                        if (preset != null) {
+                            PresetIconManager iconManager = preset.getIconManager(context);
+                            iconDrawable = iconManager.getDrawable(iconPath, ICON_SIZE_DP);
+                            if (iconDrawable != null) {
+                                customIconCache.put(iconPath, iconDrawable);
+                                break;
+                            }
+                        }
+                    }
+                    if (iconDrawable == null) {
+                        Log.e(DEBUG_TAG, "Icon " + iconPath + " not found");
+                    }
                 }
             }
         } else if (tmpPresets != null) {

@@ -1969,6 +1969,16 @@ public final class DataStyle extends DefaultHandler {
     public Path getXPath() {
         return xPath;
     }
+    
+    /**
+     * If a directory is set for custom icons return it
+     * 
+     * @return the directory path or null
+     */
+    @Nullable
+    public String getIconDirPath() {
+        return iconDirPath;
+    }
 
     /**
      * @return the name

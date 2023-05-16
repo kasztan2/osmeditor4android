@@ -325,7 +325,7 @@ public class Preset {
      * @return the PresetIconManager instance
      */
     @NonNull
-    PresetIconManager getIconManager(@NonNull Context ctx) {
+    public PresetIconManager getIconManager(@NonNull Context ctx) {
         if (iconManager == null) {
             if (directory != null) {
                 if (directory.getName().equals(AdvancedPrefDatabase.ID_DEFAULT)) {

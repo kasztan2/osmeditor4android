@@ -61,6 +61,8 @@
     <feature type="node" />
     <feature type="node" tags="name" labelKey="name" />
     <feature type="node" tags="entrance|addr:housenumber" labelKey="addr:housenumber" />
+    <feature type="node" tags="highway=crossing|crossing=unmarked" iconPath="icons/png/barrier_empty.png" />
+    <feature type="node" tags="highway=crossing|crossing:markings=no" iconPath="icons/png/barrier_empty.png" />
     
     <!-- OSM way based features -->
     <feature type="way" updateWidth="true" widthFactor="1.0" color="80000000" style="STROKE" cap="BUTT" join="MITER" />
